@@ -14,9 +14,10 @@ which is the metadata text file associating filename with checksum and timestamp
 
 
 """
-
+import os
 import shutil
 import md5
+import time
 
 
 __vcsFolder = ".vcs"
@@ -24,9 +25,10 @@ __vcsTransactionFileName = "%s/vcs.dat" % __vcsFolder
 __vcsLogFileName = "%s/vcs.log" % __vcsFolder
 __vcsRecordDelimiter = ";"
 __vcsPathDelimiter = "/"
+__vcsLineDelimiter = "\n"
 
 
-def checksum(filePath):
+def calcChecksum(filePath):
     m = md5.new()
     with open(filePath) as fh:
         m.update(fh.read())
@@ -45,49 +47,51 @@ def parseTransactionEntry(transactionEntryLine):
 
 
 def snapTransaction(command, filePath):
-    timestamp = time.now()
-    with open(filePath, "r") as fh:
-        checksum = checksum(fh.read())
-    return(command + __vcsRecordDelimiter + filePath + __vcsRecordDelimiter + checksum + __vcsRecordDelimiter + timestamp)
+    timestamp = time.time()
+    checksum = calcChecksum(filePath)
+    return(str(timestamp) +  __vcsRecordDelimiter + command + __vcsRecordDelimiter + filePath + __vcsRecordDelimiter + str(checksum))
 
 
-def transactionLogAppend(command, filePath):
+def transactionLogAppend(vcsRoot, command, filePath):
     line = snapTransaction(command, filePath)
-    with open(__vcsTransactionFileName, "a") as fh:
-        fh.write(line)
+    with open(vcsRoot + __vcsPathDelimiter + __vcsTransactionFileName, "a") as fh:
+        fh.write(line + __vcsLineDelimiter)
     return(line)
 
 
-def vcsExist(folderPath):
-    files = os.listdir(folderPath)
+def vcsExist(vcsRoot):
+    files = os.listdir(vcsRoot)
     if __vcsFolder in files:
         return(True)
     else:
         return(False)
 
 
-def vcsInit(folderPath):
-    if vcsExist(folderPath):
+def vcsInit(vcsRoot):
+    if vcsExist(vcsRoot):
         print("Vcs already exist, will not create.")
     else:
-        os.mkdir(folderPath + "/" + __vcsFolder)
-        with open(__vcsTransactionFileName, "w+") as fh:
-            transactionLine = snapTransaction("init", __vcsTransactionFileName)
+        os.mkdir(vcsRoot + "/" + __vcsFolder)
+        timestamp = time.time()
+        command = "init"
+        checksum = ""
+        transactionLine =  str(timestamp) +  __vcsRecordDelimiter + command + __vcsRecordDelimiter + __vcsTransactionFileName + __vcsRecordDelimiter + str(checksum) + __vcsLineDelimiter
+        with open(vcsRoot + __vcsPathDelimiter + __vcsTransactionFileName, "w+") as fh:
             fh.write(transactionLine)
-    return(transactionLine)
+        return(transactionLine)
 
 
-def vcsStatus(filePath):
+def vcsStatus(vcsRoot):
     pass
 
 
-def vcsCommit(filePath):
-    linesInTransactionFile = countFileLines(__vcsTransactionFileName)
+def vcsCommit(vcsRoot, filePath):
+    linesInTransactionFile = countFileLines(vcsRoot + __vcsPathDelimiter + __vcsTransactionFileName)
     fn = filePath.split(__vcsPathDelimiter)[-1]
-    storedFileName = fn + "." + linesInTransactionFile
-    storedFilePath = __vcsFolder + __vcsPathDelimiter + storedFileName
-    os.copy(filePath, storedFilePath)
-    transactionLine = transactionLogAppend("commit", storedFilePath)
+    storedFileName = fn + "." + str(linesInTransactionFile)
+    storedFilePath = vcsRoot + __vcsPathDelimiter + __vcsFolder + __vcsPathDelimiter + storedFileName
+    shutil.copy(filePath, storedFilePath)
+    transactionLine = transactionLogAppend(vcsRoot, "commit", storedFilePath)
     return(transactionLine)
 
 
@@ -95,18 +99,18 @@ def vcsRollBack(filePath):
     pass
 
 
-def vcsAdd(filePath):
-    transactionLine = transactionLogAppend("add", filePath)
+def vcsAdd(vcsRoot, filePath):
+    transactionLine = transactionLogAppend(vcsRoot, "add", filePath)
     return(transactionLine)
 
 
 def vcsRemove():
-    shutil.rmtree(__vcsFolder, ignore_errors=True)
+    shutil.rmtree(vcsRoot + __vcsPathDelimiter + __vcsFolder, ignore_errors=True)
 
 
 if __name__ == "__main__":
-    testDir = "./testfiles"
-    testFile = testDir + "/testFile.txt"
-    vcsInit(testDir)
-    vcsAdd("testDir/testFile.txt")
-    vcsCommit("testDir/testFile.txt")
+    vcsRoot = "./testfiles"
+    testFile = vcsRoot + "/testFile.txt"
+    vcsInit(vcsRoot)
+    vcsAdd(vcsRoot,  vcsRoot +  "/testFile.txt")
+    vcsCommit(vcsRoot, vcsRoot + "/testFile.txt")

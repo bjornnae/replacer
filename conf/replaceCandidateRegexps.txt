@@ -1,4 +1,3 @@
 # This is a file that contains all candidate regexps for identifying systems in code.
-
 Server\-[A-Z]{1}
 server\-[a-z]*

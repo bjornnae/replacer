@@ -1,6 +1,5 @@
-This is conf for server-f.
-server-a publishes things to server-c, server-d and server-b.
+This is the configuration file for server-f.
+server-f publishes things to server-c, server-d and server-b.
 server-b is a build server with alias server.build.prod
 server-c is the new build server
-alias server.build.prod will be transfered to server-c when server-b is retired.
-
+alias server.build.prod will be transferred to server-c when server-b is retired.
