@@ -8,7 +8,7 @@ import re
 replaceStringList = "./conf/replaceMap.txt"
 replaceFileList = "./conf/replaceInFiles.txt"
 replacedFileSuffix = ""
-originalFileSuffix = ".original"
+originalFileSuffix = ""
 
 def parseFilePathFile(filePath):
     resultLines = gdeserializer.parseListFromFile(filePath)
@@ -46,6 +46,17 @@ def defineNextVersionedFilename(filename):
         print("Pleased, found filename that has no file: %s" % filename)
         return(filename)
 
+def defineLastVersionedFilename(filename, previousFilename):
+    print("iterating: %s" % filename)
+    if os.path.isfile(filename):
+        print("Found file %s. Iterstepping on." % filename)
+        fname, count = stripCounter(filename)
+        return (defineLastVersionedFilename(fname + "." + str(count + 1), filename))
+    else:
+        print("Pleased, found last version of file: %s" % previousFilename)
+        return(previousFilename)
+
+
 def replaceInFiles(filePathList, replaceMap):
 
     # Pre perform check:
@@ -53,14 +64,14 @@ def replaceInFiles(filePathList, replaceMap):
         for f in filePathList:
             # Backup the original file with a new suffix .original
             # Create a the new file with replaced content. Add suffix .modified to the original filename.
-            originalFilePath = f + originalFileSuffix
 
             with open(f, "r") as fh:
                 fcontent = fh.read()
 
+            originalFilePath = f + originalFileSuffix
+            versionedOriginalFilePath = defineNextVersionedFilename(originalFilePath)
 
-
-            with open(originalFilePath, "w+") as fhO:
+            with open(versionedOriginalFilePath, "w+") as fhO:
                 fhO.write(fcontent)
 
             for k in replaceMap:

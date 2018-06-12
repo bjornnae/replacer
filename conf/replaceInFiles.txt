@@ -1,3 +1,4 @@
 #replaceInfiles.txt
 ./testfiles/conf1.dat
 ./testfiles/conf2.dat
+./testfiles/conf.xml
