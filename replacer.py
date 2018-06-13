@@ -3,12 +3,30 @@
 
 import gdeserializer
 import os
+import sys
 import re
+import time
+import datetime
 
 replaceStringList = "./conf/replaceMap.txt"
 replaceFileList = "./conf/replaceInFiles.txt"
 replacedFileSuffix = ""
 originalFileSuffix = ""
+
+# -- Logging utilities -->
+logFile = "./replace.log"
+
+def timestampNow():
+	ts = time.time()
+	st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+	return(st)
+
+def appendLog(severity, msg):
+	st = timestampNow()
+	with open(logFile, "a+") as fh:
+		fh.write("\n<%s><%s>%s" % (st, severity, msg))
+
+#<-- end logging
 
 def parseFilePathFile(filePath):
     resultLines = gdeserializer.parseListFromFile(filePath)
@@ -77,11 +95,12 @@ def replaceInFiles(filePathList, replaceMap):
             for k in replaceMap:
                 # Make replacement step here. Modifies fcontent.
                 fcontent = fcontent.replace(k, replaceMap[k])
-                print ("Replacing %s -> %s" % ( k, replaceMap[k]))
+                appendLog ("INFO", "Replacing %s -> %s" % ( k, replaceMap[k]))
 
             modifiedFilePath = f + replacedFileSuffix
             with open(modifiedFilePath, "w+") as fhM:
                 fhM.write(fcontent)
+
         return (True)
     else:
         print("No replacement activites were performed.")
@@ -89,8 +108,12 @@ def replaceInFiles(filePathList, replaceMap):
 
 if __name__ == "__main__":
 
+    if len(sys.argv) > 1:
+        replaceFileList = sys.argv[1]
+        replaceStringList = sys.argv[2]
+    appendLog("INFO", "Starting replaceInFiles session. replaceFileList: %s, replaceStringList: %s" % (replaceFileList, replaceStringList))
     fileList = parseFilePathFile(replaceFileList)
-    print("DEBUG:>> %s" % (fileList))
+    appendLog("INFO", "%s" % (fileList))
     replaceExpressions = parseReplaceExpressions(replaceStringList)
-    print("DEBUG:>> %s" % (replaceExpressions))
+    appendLog("INFO", "%s" % (replaceExpressions))
     replaceInFiles(fileList, replaceExpressions)

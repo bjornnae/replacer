@@ -23,21 +23,21 @@ import gdeserializer
 import os
 import shutil
 import replacer
+import uuid
 
 replaceStringList = replacer.replaceStringList
 replaceFileList = replacer.replaceFileList
+sid  = uuid.uuid1()
 
+replacer.appendLog("INFO", "begin rollback#%s" % sid)
 for f in gdeserializer.parseListFromFile(replaceFileList):
     latestPreviousVersion = replacer.defineLastVersionedFilename(f, f)
     if latestPreviousVersion == f:
-        #print("No previous versions of file '%s' found. Will not do anything." % f)
+        replacer.appendLog("INFO", "rollback#%s : No previous versions of file '%s' found. Will not do anything." % (sid, f))
         # Do nothing more for this file.
         pass
     else:
-        #print("Replacing %s with content of %s" % (f, latestPreviousVersion))
         # Do replace.
         shutil.move(latestPreviousVersion, f)
-        #with open(latestPreviousVersion,"r") as fh1:
-        #        previousContent = fh1.read()
-        #with open(f,"w") as fh2:
-        #        fh2.write(previousContent)
+	replacer.appendLog("INFO", "rollback#%s : Moved %s into %s." % (sid, latestPreviousVersion, f))
+replacer.appendLog("INFO", "end rollback#%s" % sid)
